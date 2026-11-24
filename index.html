@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buscador de multas</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header class="barra" id="barra" hidden>
+    <div><span id="quien"></span> <span class="chip" id="chip"></span></div>
+    <button class="sec" id="btnSalir" type="button">Cerrar sesión</button>
+  </header>
+
+  <h1>Buscador de multas</h1>
+  <p class="sub">Busca una palabra: primero ves la sección, luego la multa y las demás de esa sección.</p>
+
+  <section id="vistaCarga" class="vacio">Cargando…</section>
+
+  <section id="vistaConfig" class="caja aviso" hidden>
+    <h2>Falta configurar Firebase</h2>
+    <p class="ayuda">Abre <strong>firebase-config.js</strong>, pega los datos de tu proyecto de Firebase y vuelve a subir la página. Los pasos están en el <strong>README.md</strong>.</p>
+  </section>
+
+  <section id="vistaLogin" class="caja" hidden>
+    <div class="tabs">
+      <button type="button" class="tab activa" data-modo="entrar">Iniciar sesión</button>
+      <button type="button" class="tab" data-modo="crear">Crear cuenta</button>
+    </div>
+    <form id="formAuth" autocomplete="on">
+      <label id="lblNombre" hidden>Nombre
+        <input type="text" id="nombre" autocomplete="name" maxlength="40">
+      </label>
+      <label>Correo
+        <input type="email" id="correo" autocomplete="email" required>
+      </label>
+      <label>Contraseña
+        <input type="password" id="clave" autocomplete="current-password" minlength="6" required>
+      </label>
+      <div class="botones"><button type="submit" id="btnAuth">Entrar</button></div>
+      <p id="estadoAuth" class="estado" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section id="vistaBloqueado" class="caja aviso" hidden>
+    <h2 id="bloqueadoTitulo"></h2>
+    <p id="bloqueadoTexto" class="ayuda"></p>
+    <p id="bloqueadoContacto" class="ayuda"></p>
+  </section>
+
+  <div id="vistaApp" hidden>
+    <nav class="tabs" id="navAdmin" hidden>
+      <button type="button" class="tab activa" data-pestana="multas">Multas</button>
+      <button type="button" class="tab" data-pestana="usuarios">Usuarios</button>
+    </nav>
+
+    <div id="pestanaMultas">
+      <section class="caja" id="panelEditor" hidden>
+        <h2>1. Agregar texto</h2>
+        <p class="ayuda">Pega las multas con su precio. Cada línea es una multa.</p>
+        <textarea id="texto" rows="7" placeholder="Ejemplo:&#10;Exceso de velocidad: RD$ 5,000&#10;Pasar luz roja: RD$ 4,000&#10;No usar casco: RD$ 2,000"></textarea>
+        <div class="botones">
+          <button id="btnAgregar" type="button">Agregar al buscador</button>
+          <button id="btnReemplazar" type="button" class="sec">Reemplazar todo</button>
+          <button id="btnBorrar" type="button" class="sec peligro">Borrar todo</button>
+        </div>
+        <p id="estado" class="estado" aria-live="polite"></p>
+      </section>
+
+      <section>
+        <h2 id="tituloBuscar">Buscar</h2>
+        <form class="buscador" id="formulario" role="search">
+          <input type="search" id="busqueda" placeholder="Escribe una palabra: armas, drogas, casco…" autocomplete="off" aria-label="Buscar">
+          <button type="submit">Buscar</button>
+        </form>
+        <div id="contador" class="contador" aria-live="polite"></div>
+        <div id="resultados"></div>
+      </section>
+    </div>
+
+    <div id="pestanaUsuarios" hidden>
+      <section class="caja">
+        <h2>Usuarios y suscripciones</h2>
+        <p class="ayuda">El tiempo se suma desde ahora (o desde el vencimiento si la suscripción sigue activa). Al vencer, el usuario ya no puede ver las multas.</p>
+        <input type="search" id="buscaUsuario" placeholder="Buscar usuario por nombre o correo…" autocomplete="off">
+        <p id="estadoUsuarios" class="estado" aria-live="polite"></p>
+      </section>
+      <div id="listaUsuarios"></div>
+    </div>
+  </div>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>
