@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Admin = existe el documento admins/<UID>. Solo se crea a mano desde la consola de Firebase.
+    function esAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Servicio activo = la cuenta canjeó un código (sesiones/<UID>.codigo) que sigue
+    // activo (el bot no lo revocó), es suyo y todavía no llegó su hora de vencimiento.
+    function servicioActivo() {
+      let s = get(/databases/$(database)/documents/sesiones/$(request.auth.uid)).data;
+      let c = get(/databases/$(database)/documents/codigos/$(s.codigo)).data;
+      return c.usadoPor == request.auth.uid
+        && c.estado == 'activo'
+        && c.expiraEn > request.time;
+    }
+
+    match /admins/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || esAdmin());
+      allow write: if false;
+    }
+
+    match /users/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || esAdmin());
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['email', 'nombre', 'creado']);
+      allow update: if esAdmin();
+      allow delete: if esAdmin();
+    }
+
+    // Códigos de servicio. El ID del documento es el SHA-256 del código (el código real
+    // nunca se guarda). Los crea y revoca el bot con la clave de administrador (que se salta
+    // estas reglas). Desde la página solo se puede LEER por ID (no listar) y CANJEAR.
+    match /codigos/{hash} {
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create, delete: if false;
+      // Canje: solo si está libre, activo y sin vencer; solo se tocan usadoPor y usadoEn.
+      // Si dos personas lo intentan a la vez, la segunda falla (el documento ya no está libre).
+      allow update: if request.auth != null
+        && resource.data.usadoPor == null
+        && resource.data.estado == 'activo'
+        && resource.data.expiraEn > request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usadoPor', 'usadoEn'])
+        && request.resource.data.usadoPor == request.auth.uid
+        && request.resource.data.usadoEn == request.time;
+    }
+
+    // Qué código está usando cada cuenta.
+    match /sesiones/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['codigo'])
+        && request.resource.data.codigo is string;
+      allow delete: if false;
+    }
+
+    match /datos/{doc} {
+      allow read: if request.auth != null && (esAdmin() || servicioActivo());
+      allow write: if esAdmin();
+    }
+  }
+}
